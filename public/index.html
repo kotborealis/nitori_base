@@ -102,7 +102,7 @@
             const body = new FormData();
             body.append('files', content, document.querySelector("#fileOpsPath").value);
 
-            await fetch(`http://localhost:3000/sandbox/${window.id}/upload`, {method: "POST", body});
+            await fetch(`${apiUrl}/sandbox/${window.id}/upload`, {method: "POST", body});
 
             setFileOpsDisabled(false);
         });
@@ -113,7 +113,7 @@
 
             const path = document.querySelector("#fileOpsPath").value;
 
-            const res = await fetch(`http://localhost:3000/sandbox/${window.id}/download`, {
+            const res = await fetch(`${apiUrl}/sandbox/${window.id}/download`, {
                 method: "POST", 
                 headers: {'Content-Type': 'application/json'}, 
                 body: JSON.stringify({path})}
@@ -132,7 +132,7 @@
             window.id = id;
             
             const terminal = new Terminal();
-            const socket = new WebSocket(`ws://localhost:3000/sandbox/${id}`);
+            const socket = new WebSocket(`ws://${window.location.host}/sandbox/${id}`);
             const attachAddon = new AttachAddon.AttachAddon(socket);
             const fitAddon = new FitAddon.FitAddon();
             terminal.loadAddon(attachAddon);
