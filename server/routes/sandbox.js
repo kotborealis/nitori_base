@@ -5,19 +5,28 @@ const tar = require('tar-stream');
 
 module.exports.ws = (ws, req) => {
     const {id} = req.params;
-    ws.on('message', data => Sandbox.registry.get(id)?.emit('stdin', data));
 
-    const sender = message => ws.send(message);
+    const emitToSandbox = data => {
+        console.log("ets", data.data);
+        Sandbox.registry.get(id)?.emit('stdin', data.data);
+    }
+    const sendFromSandbox = data => {
+        console.log("sfs", data);
+        ws.send(data);
+    }
 
     Sandbox.registry.await(id, () => {
-        Sandbox.registry.get(id)?.on('stdout', sender);
-        Sandbox.registry.get(id)?.on('stderr', sender);
+        Sandbox.registry.get(id)?.on('stdout', sendFromSandbox);
+        Sandbox.registry.get(id)?.on('stderr', sendFromSandbox);
     });
 
-    const cleanup = () => Sandbox.registry.get(id)?.stop();
+    const cleanup = () => {
+        Sandbox.registry.get(id)?.stop();
+    }
 
-    ws.addEventListener('close', cleanup);
-    ws.addEventListener('error', cleanup);
+    ws.on('message', emitToSandbox);
+    ws.on('close', cleanup);
+    ws.on('error', cleanup);
 };
 
 const consumeStream = stream => new Promise((resolve, reject) => {

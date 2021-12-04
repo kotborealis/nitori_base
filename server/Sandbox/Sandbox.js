@@ -146,6 +146,7 @@ class Sandbox extends EventEmmiter {
 
         const {container} = this;
         try{
+            await container.stop();
             await container.delete({force: true});
         }
         catch(e){
@@ -167,7 +168,7 @@ class Sandbox extends EventEmmiter {
      * @param interactive
      * @returns {Promise<{stdout, exitCode: *, stderr}>}
      */
-    async exec(cmd = [], {root = false, tty = true, working_dir = '', timeout = 0, interactive = false} = {}) {
+    async exec(cmd = [], {root = false, tty = true, working_dir = '', timeout = 0, interactive = false, detached = false} = {}) {
         const {container} = this;
 
         logger.debug(`Execute \`${cmd.join(' ')}\` in \`${working_dir}\` with timeout \`${timeout}\``, {id: this.id});
@@ -184,6 +185,9 @@ class Sandbox extends EventEmmiter {
                 Tty: tty,
                 User: root ? "root" : "sandbox"
             });
+
+            if(detached)
+                return;
 
             const dockerStream = await exec.start({hijack: true, stdin: true});
             const {stdout, stderr} = await PromiseTimeout(
@@ -301,7 +305,7 @@ class Sandbox extends EventEmmiter {
     async debugSession() {
         await this.stdout(["# Starting debugging session"]);
         await this.stdout(["# Session will be ended after connection ends"]);
-        this.exec(["/bin/bash"], {interactive: true});
+        this.exec(["/bin/bash"], {interactive: true, detached: true});
     }
 }
 
