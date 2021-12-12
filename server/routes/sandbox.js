@@ -7,11 +7,9 @@ module.exports.ws = (ws, req) => {
     const {id} = req.params;
 
     const emitToSandbox = data => {
-        console.log("ets", data.data);
-        Sandbox.registry.get(id)?.emit('stdin', data.data);
+        Sandbox.registry.get(id)?.emit('stdin', data);
     }
     const sendFromSandbox = data => {
-        console.log("sfs", data);
         ws.send(data);
     }
 
@@ -59,15 +57,17 @@ module.exports.create = (config) => {
         const files = req.files.files;
 
         // Setup files
-        [files].flat().forEach(({name, data}) => tarball.entry({
-            name: `/sandbox/${name}`,
-            type: 'file',
-            mode: 0o666
-        }, data));
+        [files].flat().forEach(({name, data}) => {
+            tarball.entry({
+                name,
+                type: 'file',
+                mode: 0o666
+            }, data)
+        });
 
         tarball.finalize();
 
-        await Sandbox.registry.get(id)?.fs_put(tarball);
+        await Sandbox.registry.get(id)?.fs_put(tarball, `/sandbox/`);
 
         res.status(200).end();
     });

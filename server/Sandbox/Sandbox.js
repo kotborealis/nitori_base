@@ -186,14 +186,15 @@ class Sandbox extends EventEmmiter {
                 User: root ? "root" : "sandbox"
             });
 
-            if(detached)
-                return;
-
             const dockerStream = await exec.start({hijack: true, stdin: true});
             const {stdout, stderr} = await PromiseTimeout(
                 promisifyDockerStream(
                     dockerStream, exec, interactive ? this : null
                 ), timeout);
+
+            if(detached)
+                return;
+            
             const {data: {ExitCode: exitCode}} = await exec.status();
 
             this.stdout(stdout);
@@ -233,6 +234,7 @@ class Sandbox extends EventEmmiter {
      * @returns {Promise<Object>}
      */
     async fs_put(tarball, path = '/') {
+        console.log("put into", path);
         logger.debug("Fs put into", {path});
         return this.container.fs.put(tarball, {path});
     }

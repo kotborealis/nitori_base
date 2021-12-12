@@ -1,5 +1,6 @@
 import apiUrl from "./api.js";
 import Sandbox from "./sandbox.js";
+import editor from "./editor.js";
 
 const setFileUploadDisabled = value => {
     document.querySelector("#fileUploadSubmit").disabled = value;
@@ -37,14 +38,14 @@ document.querySelector("#fileOpsSave").addEventListener('click', async e => {
 
     setFileOpsDisabled(true);
 
-    const content = new Blob([editor.getValue()], {
+    const content = new Blob([editor.current.getValue()], {
         type: 'text/plain'
     });
 
     const body = new FormData();
     body.append('files', content, document.querySelector("#fileOpsPath").value);
 
-    await fetch(`${apiUrl}/sandbox/${window.id}/upload`, {method: "POST", body});
+    await fetch(`${apiUrl}/sandbox/${Sandbox.id}/upload`, {method: "POST", body});
 
     setFileOpsDisabled(false);
 });
@@ -55,7 +56,7 @@ document.querySelector("#fileOpsOpen").addEventListener('click', async e => {
 
     const path = document.querySelector("#fileOpsPath").value;
 
-    const res = await fetch(`${apiUrl}/sandbox/${window.id}/download`, {
+    const res = await fetch(`${apiUrl}/sandbox/${Sandbox.id}/download`, {
         method: "POST", 
         headers: {'Content-Type': 'application/json'}, 
         body: JSON.stringify({path})}
@@ -63,7 +64,7 @@ document.querySelector("#fileOpsOpen").addEventListener('click', async e => {
 
     const data = await res.json();
     const file = data.files[0];
-    editor.setValue(file.content);
+    editor.current.setValue(file.content);
 
     setFileOpsDisabled(false);
 });
