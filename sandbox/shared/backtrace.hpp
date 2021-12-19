@@ -34,7 +34,7 @@ static void addr2line(void *messageP) {
   if(fp == NULL) fprintf(stderr, "<addr2line failed>");
 
   char buf[1024];
-  while(fgets(buf, sizeof(buf), fp) != NULL) fprintf(stderr, buf);
+  while(fgets(buf, sizeof(buf), fp) != NULL) fprintf(stderr, "%s", buf);
 
   pclose(fp);
 }

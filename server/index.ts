@@ -1,3 +1,5 @@
+export {};
+
 const config = require('chen.js').config('.config.js');
 require('./logging/logger').init(config);
 

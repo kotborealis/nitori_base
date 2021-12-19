@@ -1,3 +1,5 @@
+export {};
+
 const {Sandbox} = require('../Sandbox');
 const {Docker} = require('node-docker-api');
 

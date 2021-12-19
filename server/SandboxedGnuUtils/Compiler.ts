@@ -1,6 +1,22 @@
+import {ExecParams, ExecResult, SandboxPath} from "../Sandbox/Sandbox";
+
 const tar = require('tar-stream');
 const shortid = require('shortid');
 const logger = require(('../logging/logger')).logger('SandboxedGnuUtils:Compiler');
+const {Sandbox} = require('../Sandbox/Sandbox');
+
+enum Compilers { gcc = "g++" };
+
+type CompileOptions = {
+    std?: string,
+    I?: string[],
+    include?: string[]
+};
+
+type LinkOptions = {
+    output?: SandboxPath,
+    L?: string,
+};
 
 class Compiler {
     sandbox;
@@ -13,64 +29,24 @@ class Compiler {
      * @param timeout
      * @param compiler_name
      */
-    constructor(sandbox, timeout = 60000, compiler_name = "g++") {
+    constructor(sandbox: typeof Sandbox, timeout: number = 60000, compiler_name: Compilers = Compilers.gcc) {
         this.sandbox = sandbox;
         this.compiler_name = compiler_name;
         this.timeout = timeout;
     }
 
-    /**
-     *
-     * @param source_files Array of {name, content} pairs with source files
-     * @param working_dir
-     * @param std Which standart to use
-     * @param I Include path
-     * @param include
-     * @returns {Promise<{obj: *, exec: *}>}
-     */
-    async compile(source_files, {
-        working_dir = "/sandbox/",
+    async compile(sources: SandboxPath[], {
         std = "c++2a",
         I = [],
         include = [],
-    } = {}) {
-        const {sandbox} = this;
+    }: CompileOptions = {}, execParams: ExecParams) {
+        const sandbox = this.sandbox;
 
-        const cpp_file_names = source_files
-            .map(({name}) => name)
-            .filter((name) => name.endsWith(".cpp") || name.endsWith(".c"));
+        const cpp_file_names = sources
+            .filter(name => name.endsWith(".cpp") || name.endsWith(".c"));
 
         const obj_file_names = cpp_file_names
-            .map((name) => name.slice(0, name.lastIndexOf(".")) + `.${shortid.generate()}.o`);
-
-        logger.debug("creating tarball");
-
-        const tarball = tar.pack();
-
-        // Setup dirs
-        source_files
-            .map(({name}) => name)
-            .map(name => require('path').dirname(name))
-            .filter((e, i, s) => s.indexOf(e) === i)
-            .forEach(dir => tarball.entry({
-                name: `${working_dir}/${dir}`,
-                type: 'directory',
-                mode: 0o777
-            }));
-
-        // Setup files
-        source_files
-            .forEach(({name, content}) => tarball.entry({
-                name: `${working_dir}/${name}`,
-                type: 'file',
-                mode: 0o644
-            }, content));
-
-        tarball.finalize();
-
-        logger.debug("created tarball", {source_files});
-
-        await sandbox.fs_put(tarball);
+            .map(name => `/tmp/${shortid.generate()}.o` as SandboxPath);
 
         logger.debug("uploaded tarball");
 
@@ -84,10 +60,11 @@ class Compiler {
                 "-c",
                 "-Wno-invalid-pch",
                 "-Wno-write-strings",
+                "-fconcepts",
                 name,
                 "-o",
                 obj_file_names[i]
-            ], {working_dir, timeout: this.timeout})
+            ], {...execParams, timeout: this.timeout}) as ExecResult
         ))).reduce((res, total) => ({
             stdout: total.stdout + '\n\n' + res.stdout,
             stderr: total.stderr + '\n\n' + res.stderr,
@@ -108,11 +85,10 @@ class Compiler {
      * @param L Library path
      * @returns {Promise<{output: string, exec: *}>}
      */
-    async link(object_file_names, {
-        working_dir = "/sandbox/",
+    async link(object_file_names: SandboxPath[], {
         output = "a.out",
         L = ".",
-    } = {}) {
+    } : LinkOptions = {}, execParams: ExecParams) {
         const {sandbox} = this;
 
         const res = await sandbox.exec([
@@ -121,7 +97,7 @@ class Compiler {
             "-Winvalid-pch",
             "-o", output,
             ...object_file_names
-        ], {working_dir});
+        ], execParams);
 
         return {
             exec: res,

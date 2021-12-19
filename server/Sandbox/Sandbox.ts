@@ -15,10 +15,30 @@ const EventEmmiter = require('events').EventEmitter;
 
 const instanceId = shortid.generate();
 
+export type SandboxId = string;
+export type SandboxPath = string;
+export type SandboxUser = "sandbox" | "testbuilder";
+
+export type ExecParams = {
+    user?: SandboxUser,
+    tty?: boolean,
+    working_dir?: SandboxPath,
+    timeout?: number,
+    interactive?: boolean,
+    detached?: boolean
+};
+
+export type ExecResult = {
+    exitCode: number,
+    stdout: string,
+    stderr: string
+};
+
 /**
  * Docker Sandbox class
  */
 class Sandbox extends EventEmmiter {
+    public emit: any;
     /**
      * Docker instance
      */
@@ -37,16 +57,16 @@ class Sandbox extends EventEmmiter {
     /**
      * Sandbox ID
      */
-    id;
+    id: SandboxId;
 
     /**
      * debug instance associated with this Sandbox
      */
     debug;
 
-    _running = false;
+    _running: boolean = false;
 
-    _hideOutput = false;
+    _hideOutput: boolean = false;
 
     static registry = new Registry;
 
@@ -68,10 +88,8 @@ class Sandbox extends EventEmmiter {
 
     /**
      * Get all containers created by this instance
-     * @param docker
-     * @returns {Promise<void>}
      */
-    static get_children_containers(docker) {
+    static get_children_containers(docker): Promise<any[]> {
         return docker.container.list({
             all: true,
             filters: JSON.stringify({
@@ -92,23 +110,21 @@ class Sandbox extends EventEmmiter {
 
         logger.info(`Destroying ${containers.length} containers`);
 
-        for await (let container of containers){
+        for await (let container of containers) {
             await container.pause();
 
             const {data: {Name, Image, State: {Status}}} = await container.status();
             logger.info("Killing container", {Name, Image, Status});
 
-            try{
+            try {
                 await container.kill();
-            }
-            catch(e){
+            } catch (e) {
                 logger.error("Error during container.kill()", e);
             }
 
-            try{
+            try {
                 await container.delete();
-            }
-            catch(e){
+            } catch (e) {
                 logger.error("Error during container.delete()", e);
             }
         }
@@ -122,7 +138,7 @@ class Sandbox extends EventEmmiter {
                 .then(() => docker.image.get(config.container.Image).status())
                 .then((...args) => {
                     logger.info("Successfully built sandbox image");
-                    resolve(...args);
+                    resolve.apply(null, args);
                 })
                 .catch((...args) => {
                     logger.error("Failed to build sandbox image");
@@ -133,23 +149,21 @@ class Sandbox extends EventEmmiter {
 
     /**
      * Stop & remove container
-     * @returns {Promise<void>}
      */
     async stop() {
         Sandbox.registry.unregister(this);
         logger.debug("Stop sandbox & delete container", {id: this.id});
 
-        if(!this._running){
+        if (!this._running) {
             logger.debug("Already not running", {id: this.id});
             return;
         }
 
         const {container} = this;
-        try{
+        try {
             await container.stop();
             await container.delete({force: true});
-        }
-        catch(e){
+        } catch (e) {
             logger.error("Error during container.delete()", e);
         }
 
@@ -160,22 +174,23 @@ class Sandbox extends EventEmmiter {
 
     /**
      * Execute command in container
-     * @param cmd Command, array
-     * @param root Run as root?
-     * @param tty Allocate tty?
-     * @param working_dir Set working dir
-     * @param timeout Exec timeout
-     * @param interactive
      * @returns {Promise<{stdout, exitCode: *, stderr}>}
      */
-    async exec(cmd = [], {root = false, tty = true, working_dir = '', timeout = 0, interactive = false, detached = false} = {}) {
+    async exec(cmd: string[] = [], {
+        user = "sandbox",
+        tty = true,
+        working_dir = '',
+        timeout = 0,
+        interactive = false,
+        detached = false
+    }: ExecParams = {}): Promise<ExecResult> {
         const {container} = this;
 
-        logger.debug(`Execute \`${cmd.join(' ')}\` in \`${working_dir}\` with timeout \`${timeout}\``, {id: this.id});
+        logger.debug(`Execute \`${cmd.join(' ')}\` in \`${working_dir}\` with timeout \`${timeout}\` as user ${user}`, {id: this.id});
 
         this.stdout(`${working_dir}$ ${cmd.join(' ')}`);
 
-        try{
+        try {
             const exec = await container.exec.create({
                 WorkingDir: working_dir ? working_dir : undefined,
                 Cmd: cmd,
@@ -183,18 +198,18 @@ class Sandbox extends EventEmmiter {
                 AttachStdout: true,
                 AttachStderr: true,
                 Tty: tty,
-                User: root ? "root" : "sandbox"
+                User: user
             });
 
             const dockerStream = await exec.start({hijack: true, stdin: true});
             const {stdout, stderr} = await PromiseTimeout(
                 promisifyDockerStream(
-                    dockerStream, exec, interactive ? this : null
+                    dockerStream, exec, interactive ? this : null, detached
                 ), timeout);
 
-            if(detached)
+            if (detached)
                 return;
-            
+
             const {data: {ExitCode: exitCode}} = await exec.status();
 
             this.stdout(stdout);
@@ -203,7 +218,7 @@ class Sandbox extends EventEmmiter {
             logger.debug(`exec result`, {id: this.id, exitCode, stdout, stderr});
 
             // handle SIGSEGV via exitCode
-            if(exitCode === '139'){
+            if (exitCode === '139') {
                 logger.info(`handled sigsegv (return 139)`);
                 return {
                     exitCode,
@@ -213,15 +228,13 @@ class Sandbox extends EventEmmiter {
             }
 
             return {exitCode, stdout, stderr};
-        }
-        catch(e){
-            if(e instanceof PromiseTimeoutError){
+        } catch (e) {
+            if (e instanceof PromiseTimeoutError) {
                 logger.info(`Exec timed out in ${timeout}ms.`, {id: this.id});
                 await this.stop();
                 // 124 is exit code for timeout command
                 return {exitCode: 124, stdout: e.message, stderr: ""};
-            }
-            else{
+            } else {
                 logger.error("Error while executing", e);
             }
         }
@@ -233,10 +246,10 @@ class Sandbox extends EventEmmiter {
      * @param path
      * @returns {Promise<Object>}
      */
-    async fs_put(tarball, path = '/') {
+    async fs_put(tarball, path: SandboxPath = '/') {
         console.log("put into", path);
         logger.debug("Fs put into", {path});
-        return this.container.fs.put(tarball, {path});
+        return this.container.fs.put(tarball, {path, copyUIDGID: true});
     }
 
     /**
@@ -244,12 +257,12 @@ class Sandbox extends EventEmmiter {
      * @param path
      * @returns {Promise<Object>}
      */
-    async fs_get(path) {
+    async fs_get(path: SandboxPath) {
         logger.debug("Fs get from", {path});
         return this.container.fs.get({path});
     }
 
-    async fs_delete(path) {
+    async fs_delete(path: SandboxPath) {
         logger.debug("Fs delete from", {path});
         return this.container.fs.delete({path});
     }
@@ -261,14 +274,14 @@ class Sandbox extends EventEmmiter {
     async start() {
         logger.debug("Start");
 
-        if(this._running){
+        if (this._running) {
             logger.debug("Already running");
             return;
         }
 
         const {docker, config, id} = this;
 
-        try{
+        try {
             this.container = await docker.container.create({
                 ...config.container,
                 name: `${config.sandbox.container_prefix}${id}`,
@@ -279,20 +292,20 @@ class Sandbox extends EventEmmiter {
             });
 
             await this.container.start();
-        }
-        catch(e){
+        } catch (e) {
             logger.error("Error while creating/starting container", e);
         }
 
         this._running = true;
     };
 
-    stdout(str) {
-        if(!this._hideOutput)
+    stdout(str: SandboxPath) {
+        if (!this._hideOutput)
             this.emit('stdout', str + `\r\n`);
     }
-    stderr(str) {
-        if(!this._hideOutput)
+
+    stderr(str: SandboxPath) {
+        if (!this._hideOutput)
             this.emit('stderr', str + `\r\n`);
     }
 
@@ -305,10 +318,11 @@ class Sandbox extends EventEmmiter {
     }
 
     async debugSession() {
-        await this.stdout(["# Starting debugging session"]);
-        await this.stdout(["# Session will be ended after connection ends"]);
+        await this.stdout("# Starting debugging session");
+        await this.stdout("# Session will be ended after connection ends");
         this.exec(["/bin/bash"], {interactive: true, detached: true});
     }
 }
 
 module.exports = {Sandbox};
+export type {Sandbox};

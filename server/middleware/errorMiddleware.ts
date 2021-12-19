@@ -1,3 +1,5 @@
+export {};
+
 const logger = require(('../logging/logger')).logger('ErrorHandlingMiddleware');
 
 /**

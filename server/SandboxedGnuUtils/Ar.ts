@@ -1,3 +1,5 @@
+import {ExecParams, SandboxPath} from '../Sandbox/Sandbox';
+
 class Ar {
     sandbox;
 
@@ -9,13 +11,13 @@ class Ar {
         this.sandbox = sandbox;
     }
 
-    async cr(archive = "", binaries = [], {working_dir = ''} = {}) {
+    async cr(archive: string = "", binaries: SandboxPath[] = [], params: ExecParams = {}) {
         await this.sandbox.exec([
             "ar",
             "cr",
             archive,
             ...binaries
-        ], {working_dir});
+        ], params);
     }
 }
 

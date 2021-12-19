@@ -1,3 +1,5 @@
+export {};
+
 require('winston-syslog');
 const {createLogger, format, transports} = require('winston');
 const {combine, timestamp, json, errors, prettyPrint} = format;

@@ -1,3 +1,5 @@
+export {};
+
 const {Router} = require('express');
 const {Docker} = require('node-docker-api');
 const {Sandbox} = require('../Sandbox');
@@ -49,8 +51,8 @@ module.exports.create = (config) => {
         res.status(201).json({id: sandbox.id});
     });
 
-    router.post('/:id/upload', async (req, res) => {
-        const {id} = req.params;
+    router.post('/:id/upload/:user', async (req, res) => {
+        const {id, user = 'sandbox'} = req.params;
 
         const tarball = tar.pack();
 
@@ -61,7 +63,9 @@ module.exports.create = (config) => {
             tarball.entry({
                 name,
                 type: 'file',
-                mode: 0o666
+                mode: 0o660,
+                uname: user,
+                gname: user === 'sandbox' ? 'sandboxers' : 'user'
             }, data)
         });
 
@@ -77,7 +81,7 @@ module.exports.create = (config) => {
         const {path} = req.body;
 
         const files = [];
-        
+
         const extract = tar.extract();
 
         extract.on('entry', async (header, stream, next) => {

@@ -23,7 +23,9 @@ document.querySelector("#fileUpload").addEventListener('submit', async e => {
     for (const file of document.querySelector("#fileUploadInput").files)
         body.append('files', file, file.name);
 
-    const res = await fetch(`${apiUrl}/sandbox/${Sandbox.id}/upload`, {method: "POST", body});
+    const user = document.querySelector("#fileUploadUser").value;
+
+    const res = await fetch(`${apiUrl}/sandbox/${Sandbox.id}/upload/${user}`, {method: "POST", body});
 
     setFileUploadDisabled(false);
 });
@@ -45,7 +47,9 @@ document.querySelector("#fileOpsSave").addEventListener('click', async e => {
     const body = new FormData();
     body.append('files', content, document.querySelector("#fileOpsPath").value);
 
-    await fetch(`${apiUrl}/sandbox/${Sandbox.id}/upload`, {method: "POST", body});
+    const user = document.querySelector("#fileUploadUser").value;
+
+    await fetch(`${apiUrl}/sandbox/${Sandbox.id}/upload/${user}`, {method: "POST", body});
 
     setFileOpsDisabled(false);
 });
@@ -57,8 +61,8 @@ document.querySelector("#fileOpsOpen").addEventListener('click', async e => {
     const path = document.querySelector("#fileOpsPath").value;
 
     const res = await fetch(`${apiUrl}/sandbox/${Sandbox.id}/download`, {
-        method: "POST", 
-        headers: {'Content-Type': 'application/json'}, 
+        method: "POST",
+        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({path})}
     );
 

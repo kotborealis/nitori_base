@@ -1,3 +1,5 @@
+export {};
+
 const logger = require(('./logging/logger')).logger('API');
 
 const express = require('express');
@@ -18,6 +20,7 @@ module.exports = (config) => {
     expressWs(app);
 
     app.ws('/sandbox/:id', require('./routes/sandbox').ws);
+    app.ws('/test/:id', require('./routes/test').ws);
 
     initApiExpress({app, config});
     initApiRoutes({app, config});

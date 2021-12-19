@@ -1,5 +1,7 @@
 const EventEmitter = require('events').EventEmitter;
 
+type AwaitCallback = (id: string) => any;
+
 module.exports.Registry = class Registry extends EventEmitter {
     static data = new Map;
 
@@ -25,7 +27,7 @@ module.exports.Registry = class Registry extends EventEmitter {
         return Registry.data.get(id);
     }
 
-    await(id, callback = () => 0) {
+    await(id, callback: AwaitCallback = (id) => 0) {
         if(Registry.data.has(id)) callback(Registry.data.get(id));
         else this.once(`registered/${id}`, () => callback(Registry.data.get(id)));
     }

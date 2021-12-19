@@ -10,7 +10,7 @@
 namespace nitori::processTest {
 
 struct ProcessTestCase {
-    std::vector<const char*> args = {}; //!< CLI args
+    std::vector<char*> args = {}; //!< CLI args
     std::optional<int> exitCode = {}; //!< Expected exit code
 
     std::map<std::string, std::string> fsin = {}; //!< Input filesystem (filename => content)
