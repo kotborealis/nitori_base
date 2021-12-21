@@ -11,18 +11,45 @@ module.exports.ws = (ws, req) => {
     const emitToSandbox = data => {
         Sandbox.registry.get(id)?.emit('stdin', data);
     }
+
     const sendFromSandbox = data => {
         ws.send(data);
+        resetIdleTimeout();
     }
 
-    Sandbox.registry.await(id, () => {
+    if(!Sandbox.registry.get(id)) {
+        sendFromSandbox(`# Sandbox with id ${id} does not exist`);
+        ws.close();
+        return;
+    }
+
+    const timeout = 1000 * 60 * 10;
+
+    Sandbox.registry.await(id, 1000, (sandbox, err) => {
+        if(err) {
+	    ws.send(`# Sandbox with id ${id} not found`);
+            ws.close();
+            return;
+        }
+
         Sandbox.registry.get(id)?.on('stdout', sendFromSandbox);
         Sandbox.registry.get(id)?.on('stderr', sendFromSandbox);
     });
 
     const cleanup = () => {
+        console.log("Cleanup for sandbox from router", {id, timeout});
         Sandbox.registry.get(id)?.stop();
+	ws.send(`\n# Sandbox stopped`);
     }
+
+    let idle = { timeout: null };
+
+    const resetIdleTimeout = () => {
+        if(idle.timeout) clearTimeout(idle.timeout);
+        idle.timeout = setTimeout(cleanup, timeout);
+    };
+
+    resetIdleTimeout();
 
     ws.on('message', emitToSandbox);
     ws.on('close', cleanup);
@@ -96,6 +123,16 @@ module.exports.create = (config) => {
 
         const tarball = await Sandbox.registry.get(id)?.fs_get(path);
         tarball.pipe(extract);
+    });
+
+    router.post(`/:id/resize-tty`, async (req, res) => {
+        const {id} = req.params;
+        const {cols, rows} = req.body;
+
+
+        await Sandbox.registry.get(id)?.resizeTty({cols, rows});
+
+        res.status(200).end();
     });
 
     return router;

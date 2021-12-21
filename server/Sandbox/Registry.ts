@@ -1,6 +1,6 @@
 const EventEmitter = require('events').EventEmitter;
 
-type AwaitCallback = (id: string) => any;
+type AwaitCallback = (id: string, err?: Error) => any;
 
 module.exports.Registry = class Registry extends EventEmitter {
     static data = new Map;
@@ -27,8 +27,21 @@ module.exports.Registry = class Registry extends EventEmitter {
         return Registry.data.get(id);
     }
 
-    await(id, callback: AwaitCallback = (id) => 0) {
-        if(Registry.data.has(id)) callback(Registry.data.get(id));
-        else this.once(`registered/${id}`, () => callback(Registry.data.get(id)));
+    await(id, timeout: number, callback: AwaitCallback = (id) => 0) {
+        if(Registry.data.has(id)) 
+            return callback(Registry.data.get(id));
+
+	let timeoutId = null;
+
+	const fn = () => {
+            if(timeoutId)
+                clearTimeout(timeoutId);
+            
+            callback(Registry.data.get(id));
+        };
+
+        this.once(`registered/${id}`, fn);
+        
+        timeoutId = setTimeout(() => callback(null, new Error(`timed out after ${timeout}ms`)), timeout);
     }
 }

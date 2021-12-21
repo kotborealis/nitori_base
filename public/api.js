@@ -1,1 +1,1 @@
-export default `${window.location.protocol}//${window.location.host}`
+export default `https://vega.fcyb.mirea.ru/sandbox/`

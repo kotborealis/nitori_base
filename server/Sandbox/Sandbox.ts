@@ -70,6 +70,8 @@ class Sandbox extends EventEmmiter {
 
     static registry = new Registry;
 
+    interactiveExecSession = null;
+
     /**
      * Constructor
      * @param docker Docker instance
@@ -158,7 +160,7 @@ class Sandbox extends EventEmmiter {
             logger.debug("Already not running", {id: this.id});
             return;
         }
-
+        
         const {container} = this;
         try {
             await container.stop();
@@ -200,6 +202,9 @@ class Sandbox extends EventEmmiter {
                 Tty: tty,
                 User: user
             });
+
+            if(interactive && tty && detached)
+		this.interactiveExecSession = exec;
 
             const dockerStream = await exec.start({hijack: true, stdin: true});
             const {stdout, stderr} = await PromiseTimeout(
@@ -265,6 +270,11 @@ class Sandbox extends EventEmmiter {
     async fs_delete(path: SandboxPath) {
         logger.debug("Fs delete from", {path});
         return this.container.fs.delete({path});
+    }
+
+    async resizeTty({cols, rows} = {cols: 0, rows: 0}) {
+        logger.debug("Resize tty", {id: this.id, cols, rows});
+	return this.interactiveExecSession.resize({h: rows, w: cols});
     }
 
     /**

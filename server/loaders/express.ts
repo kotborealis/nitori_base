@@ -10,7 +10,7 @@ const fileUpload = require('express-fileupload');
  */
 module.exports = ({app, config}) => {
     // Allow cross-origin requests
-    app.use(cors());
+    app.use(cors({credentials: true, origin: true, exposedHeaders: '*'}));
 
     // Body parser middleware
     app.use(bodyParser.json());

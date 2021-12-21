@@ -4,7 +4,8 @@ const {Sandbox} = require('../Sandbox');
 const {Docker} = require('node-docker-api');
 
 module.exports = ({config}) => {
-    process.on('SIGINT', async () => {
+    const terminate = async () => {
+	console.log("Terminating");
         try{
             const docker = new Docker(config.docker);
             await Sandbox.destroy_all(docker);
@@ -13,5 +14,8 @@ module.exports = ({config}) => {
         catch(e){
             process.exit(1);
         }
-    });
+    };
+
+    process.on('SIGINT', terminate);
+    process.on('SIGTERM', terminate);
 };

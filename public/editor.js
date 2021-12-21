@@ -10,7 +10,7 @@ const editor = { current: null };
 
 export default editor;
 
-require.config({ paths: { vs: '/node_modules/monaco-editor/min/vs' } });
+require.config({ paths: { vs: '../node_modules/monaco-editor/min/vs' } });
 require(['vs/editor/editor.main'], function () {
     editor.current = monaco.editor.create(document.querySelector('#editor-container'), {
         // automaticLayout: true,

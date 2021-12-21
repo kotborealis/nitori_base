@@ -14,7 +14,7 @@ export default Sandbox;
     }
     
     const terminal = new Terminal();
-    const socket = new WebSocket(`ws://${window.location.host}/sandbox/${Sandbox.id}`);
+    const socket = new WebSocket(`${window.location.protocol === `https:` ? `wss` : `ws`}://${window.location.host}/sandbox/sandbox/ws/${Sandbox.id}`);
     const attachAddon = new AttachAddon.AttachAddon(socket);
     const fitAddon = new FitAddon.FitAddon();
     terminal.loadAddon(attachAddon);

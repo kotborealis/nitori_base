@@ -11,7 +11,7 @@ services:
       - "${PUBLIC_PORT}:3000"
     entrypoint:
       - node
-      - /app/server/index
+      - /app/dist/index
       - --config=/app/.config.js
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
