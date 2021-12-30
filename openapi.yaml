@@ -1,0 +1,160 @@
+swagger: "2.0"
+info:
+  description: nitori_base API.
+  version: 1.0.0
+  title: nitori_base
+basePath: /
+schemes:
+- https
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /sandbox:
+    post:
+      summary: Создание нового sandbox
+      responses:
+        200:
+          description: Создан Sandbox
+          schema:
+            type: object
+            properties:
+              id:
+                $ref: '#/definitions/SandboxId'
+  /sandbox/{id}/upload/{user}:
+    post:
+      summary: Загрузка файла в sandbox
+      description: Файлы загружаются в `/sandbox/`, конкретные пути определяются по имени файла. Например, файл с именем `a/b/c/d.txt` загрузится в `/sandbox/a/b/c/d.txt`.
+      consumes:
+         - multipart/form-data
+      parameters:
+        - in: formData
+          required: true
+          name: files
+          type: file
+          description: Файл для загрузки в sandbox
+        - $ref: '#/parameters/idParam'
+        - in: path
+          required: true
+          name: user
+          $ref: '#/definitions/SandboxUsersEnum'
+          description: Под каким пользователем сохранить файл. `sandbox` - юзер, под которым на фронтенд выдаётся tty. `testrunner` - юзер, который компиляет и запускает тесты. Файлы `testrunner`'а недоступны `sandbox`. Файлы `sandbox` доступны `testrunner`.
+      responses:
+        200:
+          description: Файлы залиты
+  /sandbox/{id}/download:
+    post:
+      summary: Выгрузка файлов из sandbox
+      parameters:
+        - $ref: '#/parameters/idParam'
+        - in: body
+          required: true
+          name: body
+          schema:
+            type: object
+            properties:
+              path:
+                $ref: '#/definitions/SandboxPath'
+      responses:
+        200:
+          description: Файлы выгружены
+          schema:
+            type: object
+            properties:
+              path:
+                type: string
+                description: Путь, откуда выгружены файлы. Такой же как на входе.
+              files:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    header:
+                      $ref: '#/definitions/TarballHeader'
+                    content:
+                      $ref: '#/definitions/FileContent'
+  /sandbox/{id}/ws:
+    get:
+      summary: WebSocket-терминал sandbox
+      description: Принимает текст и пихает в stdin у tty sandbox'а. Возвращает stdout от tty./
+      parameters:
+        - $ref: '#/parameters/idParam'
+      responses:
+        101:
+          description: Connection upgrade to websocket
+  /test/{id}:
+    post:
+      summary: Запуск тестов
+      parameters:
+        - $ref: '#/parameters/idParam'
+        - in: body
+          required: true
+          name: body
+          schema:
+            type: object
+            properties:
+              testSpec:
+                allOf:
+                  - $ref: '#/definitions/SandboxPath'
+                description: Путь до файла с тестами (.cpp)
+              testTargets:
+                allOf:
+                  - $ref: '#/definitions/SandboxPathArray'
+                description: Пути исходников для компиляции (.cpp/.h/...)
+          
+definitions:
+  SandboxUsersEnum:
+    type: string
+    enum: [sandbox, testrunner]
+  SandboxId:
+    type: string
+    description: Sandbox ID
+  SandboxPath:
+    type: string
+    description: Путь внутри файловой системы Sandbox
+  SandboxPathArray:
+    type: array
+    items:
+      $ref: '#/definitions/SandboxPathArray'
+  FileContent:
+    type: string
+    description: Содержимое файла
+  TarballHeader:
+    type: object
+    description: Заголовок файла. См. секцию `Headers` в [https://www.npmjs.com/package/tar-stream](https://www.npmjs.com/package/tar-stream)
+    properties:
+      name:
+        type: string
+      size:
+        type: number
+      mode:
+        type: number
+      mtime:
+        type: number
+      type: 
+        type: string
+        enum: [file, link, symlink, directory, block-device, character-device, fifo, contiguous-file]
+      linkname:
+        type: string
+      uid:
+        type: number
+      gid:
+        type: number
+      uname:
+        type: string
+      gname:
+        type: string
+      devmajor:
+        type: number
+        default: 0
+      devminor:
+        type: number
+        default: 0
+parameters:
+  idParam:
+    required: true
+    in: path
+    name: id
+    type: string
+    description: Sandbox ID
