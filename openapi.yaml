@@ -38,7 +38,8 @@ paths:
         - in: path
           required: true
           name: user
-          $ref: '#/definitions/SandboxUsersEnum'
+          type: string
+          enum: [sandbox, testrunner]
           description: Под каким пользователем сохранить файл. `sandbox` - юзер, под которым на фронтенд выдаётся tty. `testrunner` - юзер, который компиляет и запускает тесты. Файлы `testrunner`'а недоступны `sandbox`. Файлы `sandbox` доступны `testrunner`.
       responses:
         200:
@@ -102,11 +103,52 @@ paths:
                 allOf:
                   - $ref: '#/definitions/SandboxPathArray'
                 description: Пути исходников для компиляции (.cpp/.h/...)
-          
+      responses:
+        200:
+          description: Тесты завершены. **NOTE:** результаты приходят НЕ В ВИДЕ МАССИВА, а в виде нескольких json-объектов, разделённых переводами строк. Сделано для того, чтобы можно было стримить их с сервера по http и рендерить ещё до конца запроса. См. [http://ndjson.org/](http://ndjson.org/).
+          schema:
+            type: array
+            items:
+              oneOf:
+                - $ref: '#/definitions/TestTargetResultTargetCompiler'
+                - $ref: '#/definitions/TestTargetResultSpecCompiler'
+                - $ref: '#/definitions/TestTargetResultLinker'
+                - $ref: '#/definitions/TestTargetResultRunner'
+              
 definitions:
-  SandboxUsersEnum:
-    type: string
-    enum: [sandbox, testrunner]
+  TestTargetResultTargetCompiler:
+    description: Результат компиляции теста
+    type: object
+    properties:
+      targetCompilerResult:
+        $ref: '#/definitions/ExecResult'
+  TestTargetResultSpecCompiler:
+    description: Результат компиляции таргета тестирования
+    type: object
+    properties:
+      specCompilerResult:
+        $ref: '#/definitions/ExecResult'
+  TestTargetResultLinker:
+    description: Результат линковки спеки (теста) и таргета
+    type: object
+    properties:
+      linkerResult:
+        $ref: '#/definitions/ExecResult'
+  TestTargetResultRunner:
+    description: Результат запуска теста
+    type: object
+    properties:
+      runnerResult:
+        $ref: '#/definitions/ExecResult'
+  ExecResult:
+    type: object
+    properties:
+      exitCode:
+        type: number
+      stdout:
+        type: string
+      stderr:
+        type: string
   SandboxId:
     type: string
     description: Sandbox ID
