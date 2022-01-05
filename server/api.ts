@@ -20,6 +20,7 @@ module.exports = (config) => {
     expressWs(app);
 
     app.ws('/sandbox/ws/:id', require('./routes/sandbox').ws);
+    app.ws('/editor/ws/:id', require('./routes/editor').ws);
 
     initApiExpress({app, config});
     initApiRoutes({app, config});

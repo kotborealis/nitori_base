@@ -7,6 +7,8 @@ const api = require('./api');
 const {Docker} = require('node-docker-api');
 const {Sandbox} = require('./Sandbox');
 
+require('./esbuild');
+
 process.on('unhandledRejection', (reason) => console.error('unhandledRejection', reason));
 
 (async () => {

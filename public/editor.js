@@ -1,22 +1,40 @@
-const defaultEditorValue = `
-#include <cstdio>
-int main() {
-    printf("Hello, world!");
-    return 0;
-}
-`.slice(1,-1);
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
+import { MonacoBinding } from 'y-monaco';
+import { storeInHash, loadFromHash } from "./hashStorage.js";
+import {wsApiUrl, httpApiUrl} from './api.js';
 
-const editor = { current: null };
+const editor = { current: null, id: null };
 
 export default editor;
 
-require.config({ paths: { vs: '../node_modules/monaco-editor/min/vs' } });
+require.config({ paths: { vs: '../node_modules/monaco-editor/min/vs', lib0: '../node_modules/lib0/dist' } });
+
 require(['vs/editor/editor.main'], function () {
-    editor.current = monaco.editor.create(document.querySelector('#editor-container'), {
-        // automaticLayout: true,
-        value: defaultEditorValue,
-        language: 'cpp'
-    });
+    (async () => {
+        let {editorId = null} = loadFromHash();
+        if(!editorId) {
+            const res = await fetch(`${httpApiUrl}/editor/`, {method: "POST"});
+            editorId = (await res.json()).id;
+            storeInHash({editorId});
+        }
+        editor.id = editorId;
     
-    editor.current.layout();
+        const ydocument = new Y.Doc();
+        const provider = new WebsocketProvider(`${wsApiUrl}/editor/ws`, editor.id, ydocument);
+        const type = ydocument.getText('monaco');
+
+        editor.current = monaco.editor.create(document.querySelector('#editor-container'), {
+            // automaticLayout: true,
+            value: ``,
+            language: 'cpp'
+        });
+        
+        editor.current.layout();    
+
+        const monacoBinding = new MonacoBinding(type, editor.current.getModel(), new Set([editor.current]), provider.awareness);
+        provider.connect();
+
+        awareness.on('change', () => console.log(awareness.getStates()));
+    })();    
 });

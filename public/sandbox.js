@@ -1,4 +1,5 @@
-import apiUrl from "./api.js";
+import { httpApiUrl, wsApiUrl } from "./api.js";
+import { storeInHash, loadFromHash } from "./hashStorage.js";
 
 const Sandbox = {
     id: null,
@@ -7,14 +8,16 @@ const Sandbox = {
 export default Sandbox;
 
 (async () => {
-    Sandbox.id = window.location.hash.slice(1);
-    if(!Sandbox.id) {
-        const res = await fetch(`${apiUrl}/sandbox/`, {method: "POST"});
-        Sandbox.id = (await res.json()).id;
+    let {sandboxId = null} = loadFromHash();
+    if(!sandboxId) {
+        const res = await fetch(`${httpApiUrl}/sandbox/`, {method: "POST"});
+        sandboxId = (await res.json()).id;
+        storeInHash({sandboxId});
     }
+    Sandbox.id = sandboxId;
     
     const terminal = new Terminal();
-    const socket = new WebSocket(`${window.location.protocol === `https:` ? `wss` : `ws`}://${window.location.host}/sandbox/sandbox/ws/${Sandbox.id}`);
+    const socket = new WebSocket(`${wsApiUrl}/sandbox/ws/${Sandbox.id}`);
     const attachAddon = new AttachAddon.AttachAddon(socket);
     const fitAddon = new FitAddon.FitAddon();
     terminal.loadAddon(attachAddon);

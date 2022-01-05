@@ -1,4 +1,4 @@
-import apiUrl from "./api.js";
+import {httpApiUrl} from "./api.js";
 import Sandbox from "./sandbox.js";
 import editor from "./editor.js";
 
@@ -25,7 +25,7 @@ document.querySelector("#fileUpload").addEventListener('submit', async e => {
 
     const user = document.querySelector("#fileUploadUser").value;
 
-    const res = await fetch(`${apiUrl}/sandbox/${Sandbox.id}/upload/${user}`, {method: "POST", body});
+    const res = await fetch(`${httpApiUrl}/sandbox/${Sandbox.id}/upload/${user}`, {method: "POST", body});
 
     setFileUploadDisabled(false);
 });
@@ -49,7 +49,7 @@ document.querySelector("#fileOpsSave").addEventListener('click', async e => {
 
     const user = document.querySelector("#fileUploadUser").value;
 
-    await fetch(`${apiUrl}/sandbox/${Sandbox.id}/upload/${user}`, {method: "POST", body});
+    await fetch(`${httpApiUrl}/sandbox/${Sandbox.id}/upload/${user}`, {method: "POST", body});
 
     setFileOpsDisabled(false);
 });
@@ -60,7 +60,7 @@ document.querySelector("#fileOpsOpen").addEventListener('click', async e => {
 
     const path = document.querySelector("#fileOpsPath").value;
 
-    const res = await fetch(`${apiUrl}/sandbox/${Sandbox.id}/download`, {
+    const res = await fetch(`${httpApiUrl}/sandbox/${Sandbox.id}/download`, {
         method: "POST",
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({path})}
