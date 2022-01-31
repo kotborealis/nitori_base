@@ -35,6 +35,5 @@ require(['vs/editor/editor.main'], function () {
         const monacoBinding = new MonacoBinding(type, editor.current.getModel(), new Set([editor.current]), provider.awareness);
         provider.connect();
 
-        awareness.on('change', () => console.log(awareness.getStates()));
     })();    
 });

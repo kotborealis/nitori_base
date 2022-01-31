@@ -254,7 +254,7 @@ class Sandbox extends EventEmmiter {
     async fs_put(tarball, path: SandboxPath = '/') {
         console.log("put into", path);
         logger.debug("Fs put into", {path});
-        return this.container.fs.put(tarball, {path, copyUIDGID: true});
+        return this.container.fs.put(tarball, {path});
     }
 
     /**

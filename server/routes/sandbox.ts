@@ -90,9 +90,7 @@ module.exports.create = (config) => {
             tarball.entry({
                 name,
                 type: 'file',
-                mode: 0o660,
-                uname: user,
-                gname: user === 'sandbox' ? 'sandboxers' : 'user'
+                mode: 0o666,
             }, data)
         });
 

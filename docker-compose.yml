@@ -9,6 +9,7 @@ services:
       - .env
     ports:
       - "${PUBLIC_PORT}:3000"
+    restart: unless-stopped
     entrypoint:
       - node
       - /app/dist/index
