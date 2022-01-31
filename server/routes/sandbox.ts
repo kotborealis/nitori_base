@@ -133,5 +133,15 @@ module.exports.create = (config) => {
         res.status(200).end();
     });
 
+    router.post(`/:id/cmd`, async (req, res) => {
+        const {id} = req.params;
+        const {cmd} = req.body;
+
+        const sandbox = await Sandbox.registry.get(id);
+        const result = await sandbox?.exec(["bash", "-c", cmd], {tty: false});
+
+        res.status(200).json(result);
+    });
+
     return router;
 };

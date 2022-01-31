@@ -84,6 +84,24 @@ paths:
       responses:
         101:
           description: Connection upgrade to websocket
+  /sandbox/{id}/cmd:
+    post:
+      summary: Запуск bash-комманды (bash -c "...")
+      parameters:
+        - $ref: '#/parameters/idParam'
+        - in: body
+          required: true
+          name: body
+          schema:
+            type: object
+            properties:
+              cmd:
+                type: string
+      responses:
+        200:
+          description: Результат выполнения команды
+          schema:
+            $ref: "#/definitions/ExecResult"
   /test/{id}:
     post:
       summary: Запуск тестов
