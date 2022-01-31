@@ -1,4 +1,4 @@
-export const basePath = ``;
+export const basePath = `/sandbox`;
 export const host = window.location.host;
 export const protocolHttp = window.location.protocol;
 export const protocolWs = window.location.protocol === `https:` ? `wss:` : `ws:`;
