@@ -18,12 +18,12 @@ module.exports.ws = (ws, req) => {
     }
 
     if(!Sandbox.registry.get(id)) {
-        sendFromSandbox(`# Sandbox with id ${id} does not exist`);
+        ws.send(`# Sandbox with id ${id} does not exist`);
         ws.close();
         return;
     }
 
-    const timeout = 1000 * 60 * 10;
+    const timeout = 1000 * 60 * 10 * 10;
 
     Sandbox.registry.await(id, 1000, (sandbox, err) => {
         if(err) {
@@ -52,8 +52,8 @@ module.exports.ws = (ws, req) => {
     resetIdleTimeout();
 
     ws.on('message', emitToSandbox);
-    ws.on('close', cleanup);
-    ws.on('error', cleanup);
+    // ws.on('close', cleanup);
+    // ws.on('error', cleanup);
 };
 
 const consumeStream = stream => new Promise((resolve, reject) => {
