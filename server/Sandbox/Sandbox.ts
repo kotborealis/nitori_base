@@ -190,7 +190,8 @@ class Sandbox extends EventEmmiter {
 
         logger.debug(`Execute \`${cmd.join(' ')}\` in \`${working_dir}\` with timeout \`${timeout}\` as user ${user}`, {id: this.id});
 
-        this.stdout(`${working_dir}$ ${cmd.join(' ')}`);
+	if(interactive)
+            this.stdout(`${working_dir}$ ${cmd.join(' ')}`);
 
         try {
             const exec = await container.exec.create({
@@ -217,8 +218,10 @@ class Sandbox extends EventEmmiter {
 
             const {data: {ExitCode: exitCode}} = await exec.status();
 
-            this.stdout(stdout);
-            this.stderr(stderr);
+            if(interactive) {
+                this.stdout(stdout);
+                this.stderr(stderr);
+            }
 
             logger.debug(`exec result`, {id: this.id, exitCode, stdout, stderr});
 
