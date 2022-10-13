@@ -5,6 +5,8 @@ services:
     build:
       context: ./
       dockerfile: ./Dockerfile
+    extra_hosts:
+      - "vega.fcyb.mirea.ru:192.168.71.199"
     env_file:
       - .env
     ports:
