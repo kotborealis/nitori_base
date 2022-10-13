@@ -97,6 +97,7 @@ module.exports.create = (config) => {
         tarball.finalize();
 
         await Sandbox.registry.get(id)?.fs_put(tarball, `/sandbox/`);
+	await Sandbox.registry.get(id)?.exec(['bash', '-c', 'chown -R sandbox:sandboxers /sandbox/'], {user: "root"});
 
         res.status(200).end();
     });
