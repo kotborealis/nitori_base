@@ -41,7 +41,7 @@ module.exports = {
     },
     logging: {
         transports:
-            (process.env.LOGGING_TRANSPORTS || 'syslog,console')
+            (process.env.LOGGING_TRANSPORTS || 'console')
                 .split(',').filter(i => i),
         syslog: {
             host: process.env.LOGGING_SYSLOG_HOST || 'vector',
