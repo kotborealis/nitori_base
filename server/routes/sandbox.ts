@@ -25,16 +25,10 @@ module.exports.ws = (ws, req) => {
 
     const timeout = 1000 * 60 * 10 * 10;
 
-    Sandbox.registry.await(id, 1000, (sandbox, err) => {
-        if(err) {
-	    ws.send(`# Sandbox with id ${id} not found`);
-            ws.close();
-            return;
-        }
-
-        Sandbox.registry.get(id)?.on('stdout', sendFromSandbox);
-        Sandbox.registry.get(id)?.on('stderr', sendFromSandbox);
-    });
+    const resetEvents = () => {
+        Sandbox.registry.get(id)?.removeListener('stdout', sendFromSandbox);
+        Sandbox.registry.get(id)?.removeListener('stderr', sendFromSandbox);
+    };
 
     const cleanup = () => {
         console.log("Cleanup for sandbox from router", {id, timeout});
@@ -49,11 +43,24 @@ module.exports.ws = (ws, req) => {
         idle.timeout = setTimeout(cleanup, timeout);
     };
 
+    Sandbox.registry.await(id, 1000, (sandbox, err) => {
+        if(err) {
+	    ws.send(`# Sandbox with id ${id} not found`);
+            ws.close();
+            return;
+        }
+
+        sendFromSandbox(sandbox.get_out_buffer());
+
+        sandbox.on('stdout', sendFromSandbox);
+        sandbox.on('stderr', sendFromSandbox);
+    });
+
     resetIdleTimeout();
 
     ws.on('message', emitToSandbox);
-    // ws.on('close', cleanup);
-    // ws.on('error', cleanup);
+    ws.on('close', resetEvents);
+    ws.on('error', resetEvents);
 };
 
 const consumeStream = stream => new Promise((resolve, reject) => {

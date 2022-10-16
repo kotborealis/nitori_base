@@ -16,12 +16,12 @@ const promisifyDockerStream = (stream, exec = null, eventEmmiter = null, detache
     demuxStream(stream, {
         write: chunk => {
             stdout += chunk.toString();
-            eventEmmiter && eventEmmiter.emit('stdout', chunk.toString());
+            eventEmmiter && eventEmmiter.stdout(chunk.toString());
         }
     }, {
         write: chunk => {
             stderr += chunk.toString();
-            eventEmmiter && eventEmmiter.emit('stderr', chunk.toString());
+            eventEmmiter && eventEmmiter.stderr(chunk.toString());
         }
     });
 
