@@ -160,7 +160,7 @@ class Sandbox extends EventEmmiter {
             logger.debug("Already not running", {id: this.id});
             return;
         }
-        
+
         const {container} = this;
         try {
             await container.stop();
@@ -255,7 +255,6 @@ class Sandbox extends EventEmmiter {
      * @returns {Promise<Object>}
      */
     async fs_put(tarball, path: SandboxPath = '/') {
-        console.log("put into", path);
         logger.debug("Fs put into", {path});
         return this.container.fs.put(tarball, {path});
     }

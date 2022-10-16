@@ -85,19 +85,23 @@ module.exports.create = (config) => {
 
         const files = req.files.files;
 
+        const uid = Number.parseInt((await sandbox.exec(["id", "-u", user])).stdout);
+        const gid = Number.parseInt((await sandbox.exec(["id", "-g", user])).stdout);
+
         // Setup files
         [files].flat().forEach(({name, data}) => {
             tarball.entry({
                 name,
                 type: 'file',
-                mode: 0o666,
+                mode: 0o665,
+                uid,
+                gid
             }, data)
         });
 
         tarball.finalize();
 
         await Sandbox.registry.get(id)?.fs_put(tarball, `/sandbox/`);
-	await Sandbox.registry.get(id)?.exec(['bash', '-c', 'chown -R sandbox:sandboxers /sandbox/'], {user: "root"});
 
         res.status(200).end();
     });
