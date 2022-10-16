@@ -1,4 +1,4 @@
-FROM bitnami/minideb:unstable
+FROM bitnami/minideb:latest
 
 RUN apt-get update && apt-get install -y --no-install-recommends locales g++ valgrind gdb vim build-essential \
  && rm -rf /var/lib/apt/lists/* \
@@ -10,12 +10,12 @@ RUN mkdir -p /opt/nitori/__unit_test/
 COPY ./shared/* /opt/nitori/
 COPY ./shared/__unit_test/* /opt/nitori/__unit_test/
 
-RUN g++ \
-    -std=c++2a \
-    -fconcepts \
-    -c \
-    /opt/nitori/testing.hpp \
-    -o /opt/nitori/testing.hpp.gch
+# RUN g++ \
+#     -std=c++2a \
+#     -fconcepts \
+#     -c \
+#     /opt/nitori/testing.hpp \
+#     -o /opt/nitori/testing.hpp.gch
 
 RUN groupadd sandboxers
 
