@@ -85,6 +85,8 @@ module.exports.create = (config) => {
 
         const files = req.files.files;
 
+        const sandbox = Sandbox.registry.get(id);
+
         const uid = Number.parseInt((await sandbox.exec(["id", "-u", user])).stdout);
         const gid = Number.parseInt((await sandbox.exec(["id", "-g", user])).stdout);
 
@@ -101,7 +103,7 @@ module.exports.create = (config) => {
 
         tarball.finalize();
 
-        await Sandbox.registry.get(id)?.fs_put(tarball, `/sandbox/`);
+        await sandbox?.fs_put(tarball, `/sandbox/`);
 
         res.status(200).end();
     });
