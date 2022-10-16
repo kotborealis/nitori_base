@@ -10,12 +10,12 @@ RUN mkdir -p /opt/nitori/__unit_test/
 COPY ./shared/* /opt/nitori/
 COPY ./shared/__unit_test/* /opt/nitori/__unit_test/
 
-# RUN g++ \
-#     -std=c++2a \
-#     -fconcepts \
-#     -c \
-#     /opt/nitori/testing.hpp \
-#     -o /opt/nitori/testing.hpp.gch
+RUN g++ \
+    -std=c++2a \
+    -fconcepts \
+    -c \
+    /opt/nitori/testing.hpp \
+    -o /opt/nitori/testing.hpp.gch
 
 RUN groupadd sandboxers
 
